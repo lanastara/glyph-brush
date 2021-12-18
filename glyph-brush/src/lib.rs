@@ -43,10 +43,10 @@ pub use glyph_brush_layout::*;
 use glyph_brush_layout::ab_glyph::*;
 
 /// A "practically collision free" `Section` hasher
-#[cfg(not(target_arch = "wasm32"))]
-pub type DefaultSectionHasher = twox_hash::RandomXxHashBuilder;
+// #[cfg(not(target_arch = "wasm32"))]
+// pub type DefaultSectionHasher = twox_hash::RandomXxHashBuilder;
 // Work around for rand issues in wasm #61
-#[cfg(target_arch = "wasm32")]
+// #[cfg(target_arch = "wasm32")]
 pub type DefaultSectionHasher = std::hash::BuildHasherDefault<twox_hash::XxHash>;
 
 #[test]
