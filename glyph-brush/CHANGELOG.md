@@ -1,3 +1,29 @@
+# 0.7.10
+* Fix conversions from OwnedSection -> Section with non-default extra type.
+
+# 0.7.9
+* Add `GlyphCruncher::glyphs` doc example of using `section_index` & `byte_index`.
+* Update _rustc-hash_ to `2`.
+
+# v0.7.8
+* Update _ordered-float_ to `4`.
+
+# v0.7.7
+* Allow `Text::new` to work with any `X` type. **This may break usage**, however it will hopefully be non-breaking in practice as the compiler should always be able to infer this.
+* Add `Section::builder` for more flexible `X`/"extra" type usage than `Section::default` & for owned text too.
+* Add more flexible `X` type usage to `GlyphBrush::keep_cached`.
+* Add `Section::from(text)` & `Section::from(vec![text])` conversions.
+* Update `GlyphCruncher::glyphs`, `GlyphCruncher::glyph_bounds` docs.
+
+# v0.7.6
+* Removed _log_ dependency.
+
+# 0.7.5
+* Implement `Eq` for `BrushError`.
+
+# 0.7.4
+* Update _ordered-float_ to `3`.
+
 # 0.7.3
 * Add documentation of `GlyphBrush` generic types & workarounds when `.build()` type inference fails.
 * wasm: Fix _twox-hash_ compilation.

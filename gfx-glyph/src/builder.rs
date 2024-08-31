@@ -7,14 +7,7 @@ use glyph_brush::delegate_glyph_brush_builder_fns;
 ///
 /// ```no_run
 /// use gfx_glyph::{ab_glyph::FontArc, GlyphBrushBuilder};
-/// # use old_school_gfx_glutin_ext::*;
-/// # let event_loop = glutin::event_loop::EventLoop::new();
-/// # let window_builder = glutin::window::WindowBuilder::new();
-/// # let (_window, _device, mut gfx_factory, gfx_color, gfx_depth) =
-/// #     glutin::ContextBuilder::new()
-/// #         .build_windowed(window_builder, &event_loop)
-/// #         .unwrap()
-/// #         .init_gfx::<gfx::format::Srgba8, gfx::format::Depth>();
+/// # let gfx_factory: gfx_device_gl::Factory = unimplemented!();
 ///
 /// let dejavu = FontArc::try_from_slice(include_bytes!("../../fonts/DejaVuSans.ttf")).unwrap();
 /// let mut glyph_brush = GlyphBrushBuilder::using_font(dejavu).build(gfx_factory.clone());
@@ -84,9 +77,8 @@ where
     /// ```no_run
     /// # use gfx_glyph::GlyphBrushBuilder;
     /// # let some_font: gfx_glyph::ab_glyph::FontArc = unimplemented!();
-    /// GlyphBrushBuilder::using_font(some_font)
-    ///     .depth_test(gfx::preset::depth::PASS_WRITE)
-    ///     // ...
+    /// GlyphBrushBuilder::using_font(some_font).depth_test(gfx::preset::depth::PASS_WRITE)
+    /// // ...
     /// # ;
     /// ```
     pub fn depth_test(mut self, depth_test: gfx::state::Depth) -> Self {
@@ -104,7 +96,7 @@ where
     /// # let some_font: gfx_glyph::ab_glyph::FontArc = unimplemented!();
     /// GlyphBrushBuilder::using_font(some_font)
     ///     .texture_filter_method(gfx::texture::FilterMethod::Scale)
-    ///     // ...
+    /// // ...
     /// # ;
     /// ```
     pub fn texture_filter_method(mut self, filter_method: texture::FilterMethod) -> Self {
@@ -124,9 +116,8 @@ where
     /// # use gfx_glyph::GlyphBrushBuilder;
     /// # let some_font: gfx_glyph::ab_glyph::FontArc = unimplemented!();
     /// # type SomeOtherBuildHasher = std::collections::hash_map::RandomState;
-    /// GlyphBrushBuilder::using_font(some_font)
-    ///     .section_hasher(SomeOtherBuildHasher::default())
-    ///     // ...
+    /// GlyphBrushBuilder::using_font(some_font).section_hasher(SomeOtherBuildHasher::default())
+    /// // ...
     /// # ;
     /// ```
     pub fn section_hasher<T: BuildHasher>(self, section_hasher: T) -> GlyphBrushBuilder<F, T> {

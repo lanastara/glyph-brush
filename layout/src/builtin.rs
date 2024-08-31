@@ -352,20 +352,26 @@ impl VerticalAlign {
 #[cfg(test)]
 mod bounds_test {
     use super::*;
-    use std::f32::INFINITY as inf;
+
+    const fn inf() -> f32 {
+        f32::INFINITY
+    }
 
     #[test]
     fn v_align_y_bounds_inf() {
-        assert_eq!(VerticalAlign::Top.y_bounds(0.0, inf), (0.0, inf));
-        assert_eq!(VerticalAlign::Center.y_bounds(0.0, inf), (-inf, inf));
-        assert_eq!(VerticalAlign::Bottom.y_bounds(0.0, inf), (-inf, 0.0));
+        assert_eq!(VerticalAlign::Top.y_bounds(0.0, inf()), (0.0, inf()));
+        assert_eq!(VerticalAlign::Center.y_bounds(0.0, inf()), (-inf(), inf()));
+        assert_eq!(VerticalAlign::Bottom.y_bounds(0.0, inf()), (-inf(), 0.0));
     }
 
     #[test]
     fn h_align_x_bounds_inf() {
-        assert_eq!(HorizontalAlign::Left.x_bounds(0.0, inf), (0.0, inf));
-        assert_eq!(HorizontalAlign::Center.x_bounds(0.0, inf), (-inf, inf));
-        assert_eq!(HorizontalAlign::Right.x_bounds(0.0, inf), (-inf, 0.0));
+        assert_eq!(HorizontalAlign::Left.x_bounds(0.0, inf()), (0.0, inf()));
+        assert_eq!(
+            HorizontalAlign::Center.x_bounds(0.0, inf()),
+            (-inf(), inf())
+        );
+        assert_eq!(HorizontalAlign::Right.x_bounds(0.0, inf()), (-inf(), 0.0));
     }
 }
 
@@ -374,17 +380,17 @@ mod layout_test {
     use super::*;
     use crate::{BuiltInLineBreaker::*, FontId, SectionText};
     use approx::assert_relative_eq;
-    use once_cell::sync::Lazy;
     use ordered_float::OrderedFloat;
-    use std::{collections::*, f32};
+    use std::{collections::*, f32, sync::LazyLock};
 
-    static A_FONT: Lazy<FontRef<'static>> = Lazy::new(|| {
+    static A_FONT: LazyLock<FontRef<'static>> = LazyLock::new(|| {
         FontRef::try_from_slice(include_bytes!("../../fonts/DejaVuSansMono.ttf")).unwrap()
     });
-    static CJK_FONT: Lazy<FontRef<'static>> = Lazy::new(|| {
+    static CJK_FONT: LazyLock<FontRef<'static>> = LazyLock::new(|| {
         FontRef::try_from_slice(include_bytes!("../../fonts/WenQuanYiMicroHei.ttf")).unwrap()
     });
-    static FONT_MAP: Lazy<[&'static FontRef<'static>; 2]> = Lazy::new(|| [&*A_FONT, &*CJK_FONT]);
+    static FONT_MAP: LazyLock<[&'static FontRef<'static>; 2]> =
+        LazyLock::new(|| [&*A_FONT, &*CJK_FONT]);
 
     /// All the chars used in testing, so we can reverse lookup the glyph-ids
     const TEST_CHARS: &[char] = &[
@@ -761,7 +767,7 @@ mod layout_test {
             .map(|g| OrderedFloat(g.glyph.position.y))
             .collect();
 
-        println!("Y ords: {:?}", y_ords);
+        println!("Y ords: {y_ords:?}");
         assert_eq!(y_ords.len(), 3, "expected 3 distinct lines");
 
         assert_glyph_order!(
@@ -815,7 +821,7 @@ mod layout_test {
         let glyphs = Layout::default_wrap().calculate_glyphs(
             &*FONT_MAP,
             &SectionGeometry {
-                bounds: (50.0, ::std::f32::INFINITY),
+                bounds: (50.0, f32::INFINITY),
                 ..SectionGeometry::default()
             },
             &[
@@ -841,7 +847,7 @@ mod layout_test {
             .map(|g| OrderedFloat(g.glyph.position.y))
             .collect();
 
-        assert_eq!(y_ords.len(), 2, "Y ords: {:?}", y_ords);
+        assert_eq!(y_ords.len(), 2, "Y ords: {y_ords:?}");
 
         let first_line_y = y_ords.iter().min().unwrap();
         let second_line_y = y_ords.iter().max().unwrap();
@@ -931,8 +937,8 @@ mod layout_test {
         );
     }
 
-    /// Chinese sentance squeezed into a vertical pipe meaning each character is on
-    /// a seperate line.
+    /// Chinese sentence squeezed into a vertical pipe meaning each character is on
+    /// a separate line.
     #[test]
     fn wrap_word_chinese() {
         let glyphs = Layout::default().calculate_glyphs(
@@ -961,13 +967,13 @@ mod layout_test {
             .map(|g| OrderedFloat(g.glyph.position.y))
             .collect();
 
-        assert_eq!(y_positions.len(), 7, "{:?}", y_positions);
+        assert_eq!(y_positions.len(), 7, "{y_positions:?}");
     }
 
-    /// #130 - Respect trailing whitespace in words if directly preceeding a hard break.
+    /// #130 - Respect trailing whitespace in words if directly preceding a hard break.
     /// So right-aligned wrapped on 2 lines `Foo bar` will look different to `Foo \nbar`.
     #[test]
-    fn include_spaces_in_layout_width_preceeded_hard_break() {
+    fn include_spaces_in_layout_width_preceded_hard_break() {
         // should wrap due to width bound
         let glyphs_no_newline = Layout::default()
             .h_align(HorizontalAlign::Right)
@@ -987,7 +993,7 @@ mod layout_test {
             .iter()
             .map(|g| OrderedFloat(g.glyph.position.y))
             .collect();
-        assert_eq!(y_positions.len(), 2, "{:?}", y_positions);
+        assert_eq!(y_positions.len(), 2, "{y_positions:?}");
 
         // explicit wrap
         let glyphs_newline = Layout::default()
@@ -1008,9 +1014,9 @@ mod layout_test {
             .iter()
             .map(|g| OrderedFloat(g.glyph.position.y))
             .collect();
-        assert_eq!(y_positions.len(), 2, "{:?}", y_positions);
+        assert_eq!(y_positions.len(), 2, "{y_positions:?}");
 
-        // explict wrap should include the space in the layout width,
+        // explicit wrap should include the space in the layout width,
         // so the explicit newline `F` should be to the left of the no_newline `F`.
         let newline_f = &glyphs_newline[0];
         let no_newline_f = &glyphs_no_newline[0];
@@ -1022,10 +1028,10 @@ mod layout_test {
         );
     }
 
-    /// #130 - Respect trailing whitespace in words if directly preceeding end-of-glyphs.
+    /// #130 - Respect trailing whitespace in words if directly preceding end-of-glyphs.
     /// So right-aligned `Foo ` will look different to `Foo`.
     #[test]
-    fn include_spaces_in_layout_width_preceeded_end() {
+    fn include_spaces_in_layout_width_preceded_end() {
         let glyphs_no_newline = Layout::default()
             .h_align(HorizontalAlign::Right)
             .calculate_glyphs(

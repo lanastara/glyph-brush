@@ -26,7 +26,7 @@
 //! # let glyph: ab_glyph::Glyph = unimplemented!();
 //! match draw_cache.rect_for(font_id, &glyph) {
 //!     Some((tex_coords, px_coords)) => {}
-//!     None => {/* The glyph has no outline, or wasn't queued up to be cached */}
+//!     None => { /* The glyph has no outline, or wasn't queued up to be cached */ }
 //! }
 //! # Ok(()) }
 //! ```
@@ -145,7 +145,7 @@ struct GlyphTexInfo {
     tex_coords: Rectangle<u32>,
     /// Used to calculate the bounds/texture pixel location for a similar glyph.
     ///
-    /// Each ordinate is calculated: `(bounds_ord - positon_ord) / g.scale`
+    /// Each ordinate is calculated: `(bounds_ord - position_ord) / g.scale`
     bounds_minus_position_over_scale: Rect,
 }
 
@@ -865,7 +865,7 @@ impl DrawCache {
         // The first (tallest) glyph height is used to calculate work magnitude.
         let work_magnitude = {
             let tallest_h = draw_and_upload
-                .get(0)
+                .first()
                 .map(|(r, _)| r.height() as usize)
                 .unwrap_or(0);
             glyph_count
@@ -990,7 +990,7 @@ impl DrawCache {
     /// glyph that is deemed close enough to the requested glyph as specified by
     /// the cache tolerance parameters.
     ///
-    /// A sucessful result is `Some` if the glyph is not an empty glyph (no
+    /// A successful result is `Some` if the glyph is not an empty glyph (no
     /// shape, and thus no rect to return).
     ///
     /// Ensure that `font_id` matches the `font_id` that was passed to

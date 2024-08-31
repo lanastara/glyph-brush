@@ -1,8 +1,8 @@
 [package]
 name = "gfx_glyph"
-version = "0.17.0"
+version = "0.17.1"
 authors = ["Alex Butler <alexheretic@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Fast GPU cached text rendering using gfx-rs & ab_glyph"
 repository = "https://github.com/alexheretic/glyph-brush"
 keywords = ["font", "ttf", "truetype", "gfx", "text"]
@@ -11,15 +11,17 @@ readme = "README.md"
 
 [dependencies]
 backtrace = "0.3"
-gfx = "0.18"
+gfx = "0.18.3"
 gfx_core = "0.9"
 glyph_brush = { version = "0.7", path = "../glyph-brush" }
 log = "0.4"
 
 [dev-dependencies]
-env_logger = { version = "0.9", default-features = false }
-approx = "0.5"
-glutin = "0.28"
-old_school_gfx_glutin_ext = "0.28"
 cgmath = "0.18"
-spin_sleep = "1"
+env_logger = { version = "0.11", default-features = false }
+gfx_device_gl = "0.16"
+glutin = "0.32"
+glutin-winit = "0.5"
+old_school_gfx_glutin_ext = "0.34"
+spin_sleep_util = "0.1"
+winit = "0.30"

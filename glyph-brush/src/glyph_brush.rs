@@ -15,7 +15,7 @@ use std::{
 /// A hash of `Section` data
 type SectionHash = u64;
 
-/// Object allowing glyph drawing, containing cache state. Manages glyph positioning cacheing,
+/// Object allowing glyph drawing, containing cache state. Manages glyph positioning caching,
 /// glyph draw caching & efficient GPU texture cache updating.
 ///
 /// Build using a [`GlyphBrushBuilder`].
@@ -61,11 +61,11 @@ pub struct GlyphBrush<V, X = Extra, F = FontArc, H = DefaultSectionHasher> {
     last_frame_seq_id_sections: Vec<SectionHashDetail>,
     frame_seq_id_sections: Vec<SectionHashDetail>,
 
-    // buffer of section-layout hashs (that must exist in the calculate_glyph_cache)
+    // buffer of section-layout hashes (that must exist in the calculate_glyph_cache)
     // to be used on the next `process_queued` call
     section_buffer: Vec<SectionHash>,
 
-    // Set of section hashs to keep in the glyph cache this frame even if they haven't been drawn
+    // Set of section hashes to keep in the glyph cache this frame even if they haven't been drawn
     keep_in_cache: FxHashSet<SectionHash>,
 
     // config
@@ -274,7 +274,7 @@ where
                             match change {
                                 None => Some(old.positioned.glyphs),
                                 Some(change) => Some(layout.recalculate_glyphs(
-                                    old.positioned.glyphs.into_iter(),
+                                    old.positioned.glyphs,
                                     change,
                                     &self.fonts,
                                     &geometry,
@@ -371,8 +371,9 @@ where
     /// Should not generally be necessary, see [caching behaviour](#caching-behaviour).
     pub fn keep_cached_custom_layout<'a, S, G>(&mut self, section: S, custom_layout: &G)
     where
-        S: Into<Cow<'a, Section<'a>>>,
+        S: Into<Cow<'a, Section<'a, X>>>,
         G: GlyphPositioner,
+        X: 'a,
     {
         if !self.cache_glyph_positioning {
             return;
@@ -393,7 +394,8 @@ where
     /// Should not generally be necessary, see [caching behaviour](#caching-behaviour).
     pub fn keep_cached<'a, S>(&mut self, section: S)
     where
-        S: Into<Cow<'a, Section<'a>>>,
+        S: Into<Cow<'a, Section<'a, X>>>,
+        X: 'a,
     {
         let section = section.into();
         let layout = section.layout;
@@ -449,11 +451,7 @@ where
         VF: Fn(GlyphVertex<X>) -> V + Copy,
     {
         let draw_info = LastDrawInfo {
-            text_state: {
-                let mut s = self.section_hasher.build_hasher();
-                self.section_buffer.hash(&mut s);
-                s.finish()
-            },
+            text_state: self.section_hasher.hash_one(&self.section_buffer),
         };
 
         let result = if !self.cache_redraws
@@ -586,13 +584,13 @@ pub struct GlyphVertex<'x, X = Extra> {
 /// Actions that should be taken after processing queue data
 #[derive(Debug)]
 pub enum BrushAction<V> {
-    /// Draw new/changed vertix data.
+    /// Draw new/changed vertex data.
     Draw(Vec<V>),
     /// Re-draw last frame's vertices unmodified.
     ReDraw,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrushError {
     /// Texture is too small to cache queued glyphs
     ///
@@ -711,10 +709,10 @@ impl<V, X> Glyphed<V, X> {
             match texture_cache.rect_for(sg.font_id.0, &sg.glyph) {
                 None => None,
                 Some((tex_coords, pixel_coords)) => {
-                    if pixel_coords.min.x as f32 > bounds.max.x
-                        || pixel_coords.min.y as f32 > bounds.max.y
-                        || bounds.min.x > pixel_coords.max.x as f32
-                        || bounds.min.y > pixel_coords.max.y as f32
+                    if pixel_coords.min.x > bounds.max.x
+                        || pixel_coords.min.y > bounds.max.y
+                        || bounds.min.x > pixel_coords.max.x
+                        || bounds.min.y > pixel_coords.max.y
                     {
                         // glyph is totally outside the bounds
                         None
@@ -798,7 +796,7 @@ mod hash_diff_test {
             &section.layout,
         ));
 
-        assert!(matches!(diff, None));
+        assert!(diff.is_none());
     }
 
     #[test]

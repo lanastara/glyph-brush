@@ -1,5 +1,7 @@
 //! ```
-//! use glyph_brush::{ab_glyph::FontArc, BrushAction, BrushError, GlyphBrushBuilder, Section, Text};
+//! use glyph_brush::{
+//!     ab_glyph::FontArc, BrushAction, BrushError, GlyphBrushBuilder, Section, Text,
+//! };
 //!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let dejavu = FontArc::try_from_slice(include_bytes!("../../fonts/DejaVuSans.ttf"))?;
@@ -31,12 +33,11 @@
 mod extra;
 mod glyph_brush;
 mod glyph_calculator;
-mod owned_section;
 mod section;
 
 pub mod legacy;
 
-pub use crate::{extra::*, glyph_brush::*, glyph_calculator::*, owned_section::*, section::*};
+pub use crate::{extra::*, glyph_brush::*, glyph_calculator::*, section::*};
 pub use glyph_brush_draw_cache::Rectangle;
 pub use glyph_brush_layout::*;
 
@@ -51,14 +52,10 @@ pub type DefaultSectionHasher = std::hash::BuildHasherDefault<twox_hash::XxHash>
 
 #[test]
 fn default_section_hasher() {
-    use std::hash::{BuildHasher, Hash, Hasher};
+    use std::hash::BuildHasher;
 
     let section_a = Section::default().add_text(Text::new("Hovered Tile: Some((0, 0))"));
     let section_b = Section::default().add_text(Text::new("Hovered Tile: Some((1, 0))"));
-    let hash = |s: &Section| {
-        let mut hasher = DefaultSectionHasher::default().build_hasher();
-        s.hash(&mut hasher);
-        hasher.finish()
-    };
+    let hash = |s: &Section| DefaultSectionHasher::default().hash_one(s);
     assert_ne!(hash(&section_a), hash(&section_b));
 }

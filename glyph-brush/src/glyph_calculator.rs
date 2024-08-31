@@ -23,10 +23,8 @@ pub type SectionGlyphIter<'a> = slice::Iter<'a, SectionGlyph>;
 /// let default_font = glyph_brush.fonts()[0];
 /// ```
 pub trait GlyphCruncher<F: Font = FontArc, X: Clone = Extra> {
-    /// Returns an iterator over the `PositionedGlyph`s of the given section with a custom layout.
-    ///
-    /// Generally only drawable glyphs will be returned as invisible glyphs, like spaces,
-    /// are discarded during layout.
+    /// Returns an iterator over the positioned [`SectionGlyph`]s of the given section with a
+    /// custom layout.
     ///
     /// Benefits from caching, see [caching behaviour](#caching-behaviour).
     fn glyphs_custom_layout<'a, 'b, S, L>(
@@ -39,12 +37,35 @@ pub trait GlyphCruncher<F: Font = FontArc, X: Clone = Extra> {
         L: GlyphPositioner + Hash,
         S: Into<Cow<'a, Section<'a, X>>>;
 
-    /// Returns an iterator over the `PositionedGlyph`s of the given section.
-    ///
-    /// Generally only drawable glyphs will be returned as invisible glyphs, like spaces,
-    /// are discarded during layout.
+    /// Returns an iterator over the positioned [`SectionGlyph`]s of the given section.
     ///
     /// Benefits from caching, see [caching behaviour](#caching-behaviour).
+    ///
+    /// # Example
+    /// Use `section_index` & `byte_index` to lookup the source [`Section::text`] & [`char`] from
+    /// which a positioned glyph was derived.
+    /// ```
+    /// # use glyph_brush::{*, ab_glyph::*};
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let dejavu = FontArc::try_from_slice(include_bytes!("../../fonts/DejaVuSans.ttf"))?;
+    /// # let mut glyph_brush = GlyphBrushBuilder::using_font(dejavu).build::<(), _>();
+    /// # let some_other_section = Section::default();
+    /// let section = Section::default()
+    ///     .add_text(Text::new("it").with_color([0.3, 0.3, 0.9, 1.0]))
+    ///     .add_text(Text::new("s").with_color([0.9, 0.3, 0.3, 1.0]));
+    ///
+    /// for g in glyph_brush.glyphs(&section) {
+    ///     let txt = section.text[g.section_index];
+    ///     let char = txt.text[g.byte_index..].chars().next().unwrap();
+    ///     println!("'{char}' {:?} color={:?}", g.glyph.id, txt.extra.color);
+    /// }
+    /// // prints:
+    /// // 'i' GlyphId(76) color=[0.3, 0.3, 0.9, 1.0]
+    /// // 't' GlyphId(87) color=[0.3, 0.3, 0.9, 1.0]
+    /// // 's' GlyphId(86) color=[0.9, 0.3, 0.3, 1.0]
+    /// # Ok(())
+    /// # }
+    /// ```
     #[inline]
     fn glyphs<'a, 'b, S>(&'b mut self, section: S) -> SectionGlyphIter<'b>
     where
@@ -64,10 +85,7 @@ pub trait GlyphCruncher<F: Font = FontArc, X: Clone = Extra> {
     /// Returns a bounding box for the section glyphs calculated using each glyph's
     /// vertical & horizontal metrics.
     ///
-    /// If the section is empty or would result in no drawn glyphs will return `None`.
-    ///
-    /// Invisible glyphs, like spaces, are discarded during layout so trailing ones will
-    /// not affect the bounds.
+    /// If the section is empty the call will return `None`.
     ///
     /// The bounds will always lay within the specified layout bounds, ie that returned
     /// by the layout's `bounds_rect` function.
@@ -86,10 +104,7 @@ pub trait GlyphCruncher<F: Font = FontArc, X: Clone = Extra> {
     /// Returns a bounding box for the section glyphs calculated using each glyph's
     /// vertical & horizontal metrics.
     ///
-    /// If the section is empty or would result in no drawn glyphs will return `None`.
-    ///
-    /// Invisible glyphs, like spaces, are discarded during layout so trailing ones will
-    /// not affect the bounds.
+    /// If the section is empty the call will return `None`.
     ///
     /// The bounds will always lay within the specified layout bounds, ie that returned
     /// by the layout's `bounds_rect` function.
@@ -120,8 +135,7 @@ pub trait GlyphCruncher<F: Font = FontArc, X: Clone = Extra> {
 /// let dejavu = FontArc::try_from_slice(include_bytes!("../../fonts/DejaVuSans.ttf")).unwrap();
 /// let glyphs = GlyphCalculatorBuilder::using_font(dejavu).build();
 ///
-/// let section = Section::default()
-///     .add_text(Text::new("Hello glyph_brush"));
+/// let section = Section::default().add_text(Text::new("Hello glyph_brush"));
 ///
 /// // create the scope, equivalent to a lock on the cache when
 /// // dropped will clean unused cached calculations like a draw call
@@ -367,7 +381,7 @@ impl<F: Font, H: BuildHasher> GlyphCalculatorBuilder<F, H> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct GlyphedSection<X = Extra> {
+pub(crate) struct GlyphedSection<X> {
     pub bounds: Rect,
     pub glyphs: Vec<SectionGlyph>,
     pub extra: Vec<X>,
@@ -384,13 +398,12 @@ impl<X> GlyphedSection<X> {
 mod test {
     use super::*;
     use approx::*;
-    use once_cell::sync::Lazy;
-    use std::f32;
+    use std::{f32, sync::LazyLock};
 
-    static MONO_FONT: Lazy<FontArc> = Lazy::new(|| {
+    static MONO_FONT: LazyLock<FontArc> = LazyLock::new(|| {
         FontArc::try_from_slice(include_bytes!("../../fonts/DejaVuSansMono.ttf") as &[u8]).unwrap()
     });
-    static OPEN_SANS_LIGHT: Lazy<FontArc> = Lazy::new(|| {
+    static OPEN_SANS_LIGHT: LazyLock<FontArc> = LazyLock::new(|| {
         FontArc::try_from_slice(include_bytes!("../../fonts/OpenSans-Light.ttf") as &[u8]).unwrap()
     });
 
@@ -436,14 +449,14 @@ mod test {
         let bounds_rect = Layout::default().bounds_rect(&SectionGeometry::from(&section));
 
         assert!(
-            bounds_rect.min.y <= g_bounds.min.y as f32,
+            bounds_rect.min.y <= g_bounds.min.y,
             "expected {} <= {}",
             bounds_rect.min.y,
             g_bounds.min.y
         );
 
         assert!(
-            bounds_rect.max.y >= g_bounds.max.y as f32,
+            bounds_rect.max.y >= g_bounds.max.y,
             "expected {} >= {}",
             bounds_rect.max.y,
             g_bounds.max.y

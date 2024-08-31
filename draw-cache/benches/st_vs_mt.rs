@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, measurement::WallTime, Bencher, Criterion};
 use glyph_brush_draw_cache::*;
 use glyph_brush_layout::ab_glyph::*;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 /// Simple paragraph layout for glyphs into `target`.
 ///
@@ -46,7 +46,7 @@ pub fn layout_paragraph<F, SF>(
     }
 }
 
-static DEJA_VU_SANS: Lazy<FontRef<'static>> = Lazy::new(|| {
+static DEJA_VU_SANS: LazyLock<FontRef<'static>> = LazyLock::new(|| {
     FontRef::try_from_slice(include_bytes!("../../fonts/DejaVuSans.ttf") as &[u8]).unwrap()
 });
 
@@ -112,7 +112,7 @@ fn do_population_bench(
 fn bench_population_st_vs_mt(c: &mut Criterion) {
     for char_len in &[1500, 300, 50, 16] {
         for scale in &[150.0, 75.0, 30.0, 12.0] {
-            let title = format!("bench_{}_chars_{}px", char_len, scale);
+            let title = format!("bench_{char_len}_chars_{scale}px");
             c.bench_function(&title, |b| {
                 do_population_bench(
                     b,

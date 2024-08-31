@@ -36,13 +36,23 @@
 //!
 //! assert_eq!(glyphs.len(), 24);
 //!
-//! let SectionGlyph { glyph, font_id, section_index, byte_index } = &glyphs[4];
+//! let SectionGlyph {
+//!     glyph,
+//!     font_id,
+//!     section_index,
+//!     byte_index,
+//! } = &glyphs[4];
 //! assert_eq!(glyph.id, fonts[0].glyph_id('o'));
 //! assert_eq!(*font_id, FontId(0));
 //! assert_eq!(*section_index, 0);
 //! assert_eq!(*byte_index, 4);
 //!
-//! let SectionGlyph { glyph, font_id, section_index, byte_index } = &glyphs[14];
+//! let SectionGlyph {
+//!     glyph,
+//!     font_id,
+//!     section_index,
+//!     byte_index,
+//! } = &glyphs[14];
 //! assert_eq!(glyph.id, fonts[1].glyph_id('u'));
 //! assert_eq!(*font_id, FontId(1));
 //! assert_eq!(*section_index, 1);
@@ -91,7 +101,7 @@ pub trait GlyphPositioner: Hash {
     /// Recalculate a glyph sequence after a change.
     ///
     /// The default implementation simply calls `calculate_glyphs` so must be implemented
-    /// to provide benefits as such benefits are spefic to the internal layout logic.
+    /// to provide benefits as such benefits are specific to the internal layout logic.
     fn recalculate_glyphs<F, S, P>(
         &self,
         previous: P,
